@@ -36,22 +36,31 @@
     "anthropic",
     "customizable"
   ],
-  "author": "Enhanced Integration",
+  "author": {
+    "name": "LyHug",
+    "url": "https://github.com/LyHug"
+  },
   "contributors": [
     {
       "name": "Matthew Breedlove",
-      "url": "https://github.com/sirmalloc"
+      "url": "https://github.com/sirmalloc",
+      "note": "Original ccstatusline author"
+    },
+    {
+      "name": "LyHug",
+      "url": "https://github.com/LyHug",
+      "note": "Aicodemirror integration and enhancements"
     }
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/ccstatusline-aicodemirror.git"
+    "url": "git+https://github.com/LyHug/ccstatusline-aicodemirror.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/ccstatusline-aicodemirror/issues"
+    "url": "https://github.com/LyHug/ccstatusline-aicodemirror/issues"
   },
-  "homepage": "https://github.com/your-username/ccstatusline-aicodemirror#readme",
+  "homepage": "https://github.com/LyHug/ccstatusline-aicodemirror#readme",
   "engines": {
     "node": ">=14.0.0"
   },
