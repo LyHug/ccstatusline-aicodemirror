@@ -32,3 +32,84 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+*.stackdump
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Aicodemirror config files (contains sensitive cookies)
+.config/ccstatusline-aicodemirror/
+~/.config/ccstatusline-aicodemirror/
+
+# Claude Code local settings (personal development configuration)
+.claude/
+
+# Test files and local development
+test.jsonl
+*.test.js
+*.test.ts
+
+# Lock files (keep bun.lock but ignore others)
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+
+# IDE files (keep .vscode for project settings)
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/.ropeproject
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/

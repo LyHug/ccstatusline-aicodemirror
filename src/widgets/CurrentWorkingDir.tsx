@@ -60,7 +60,7 @@ export class CurrentWorkingDirWidget implements Widget {
         if (segments && segments > 0) {
             const pathParts = cwd.split('/');
             // Remove empty strings from splitting (e.g., leading slash creates empty first element)
-            const filteredParts = pathParts.filter(part => part !== '');
+            const filteredParts = pathParts.filter((part: string) => part !== '');
 
             if (filteredParts.length > segments) {
                 // Take the last N segments

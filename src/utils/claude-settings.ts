@@ -35,28 +35,47 @@ export async function saveClaudeSettings(settings: ClaudeSettings): Promise<void
 
 export async function isInstalled(): Promise<boolean> {
     const settings = await loadClaudeSettings();
-    // Check if command is either npx or bunx version AND padding is 0 (or undefined for new installs)
-    const validCommands = ['npx -y ccstatusline@latest', 'bunx -y ccstatusline@latest'];
-    return validCommands.includes(settings.statusLine?.command ?? '')
-        && (settings.statusLine?.padding === 0 || settings.statusLine?.padding === undefined);
+    const command = settings.statusLine?.command ?? '';
+
+    // Check if command is either npx or bunx ccstatusline version (including dev)
+    const validCommands = [
+        'npx -y ccstatusline@latest', 'bunx -y ccstatusline@latest',
+        'npx -y ccstatusline-aicodemirror@latest', 'bunx -y ccstatusline-aicodemirror@latest',
+        'npx -y ccstatusline-aicodemirror'
+    ];
+
+    return validCommands.includes(command) && (settings.statusLine?.padding === 0 || settings.statusLine?.padding === undefined);
 }
 
 export function isBunxAvailable(): boolean {
     try {
-        execSync('which bunx', { stdio: 'ignore' });
+        // Windows使用where命令，Unix系统使用which命令
+        const command = process.platform === 'win32' ? 'where bunx' : 'which bunx';
+        execSync(command, { stdio: 'ignore' });
         return true;
     } catch {
         return false;
     }
 }
 
-export async function installStatusLine(useBunx = false): Promise<void> {
+export async function installStatusLine(useBunx = false, isDev = false): Promise<void> {
     const settings = await loadClaudeSettings();
+
+    let command: string;
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isDev && !isProduction) {
+        command = 'npx -y ccstatusline-aicodemirror';
+    } else {
+        command = useBunx
+            ? 'bunx -y ccstatusline-aicodemirror@latest'
+            : 'npx -y ccstatusline-aicodemirror@latest';
+    }
 
     // Update settings with our status line (confirmation already handled in TUI)
     settings.statusLine = {
         type: 'command',
-        command: useBunx ? 'bunx -y ccstatusline@latest' : 'npx -y ccstatusline@latest',
+        command,
         padding: 0
     };
 

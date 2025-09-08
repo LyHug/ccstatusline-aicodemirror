@@ -1,70 +1,86 @@
 {
-  "name": "ccstatusline",
-  "version": "2.0.12",
-  "description": "A customizable status line formatter for Claude Code CLI",
+  "name": "ccstatusline-aicodemirror",
+  "version": "0.0.1",
+  "description": "Enhanced ccstatusline with comprehensive aicodemirror.com integration - A highly customizable status line formatter for Claude Code CLI with integrated credit management",
   "module": "src/ccstatusline.ts",
   "type": "module",
   "bin": {
-    "ccstatusline": "dist/ccstatusline.js"
+    "ccstatusline-aicodemirror": "dist/ccstatusline.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "start": "bun run src/ccstatusline.ts",
-    "build": "rm -rf dist/* && bun build src/ccstatusline.ts --target=node --outfile=dist/ccstatusline.js --target-version=14",
+    "statusline": "bun run src/ccstatusline.ts",
+    "build": "bun build src/ccstatusline.ts --target=node --outfile=dist/ccstatusline.js --target-version=14 --packages=external --define process.env.NODE_ENV=\\\"production\\\"",
+    "build:dev": "bun build src/ccstatusline.ts --target=node --outfile=dist/ccstatusline.js --target-version=14 --packages=external",
     "postbuild": "bun run scripts/replace-version.ts",
     "example": "cat scripts/payload.example.json | bun start",
     "prepublishOnly": "bun run build",
     "lint": "bun tsc --noEmit; eslint . --config eslint.config.js --max-warnings=999999 --fix",
-    "test": "bun vitest"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@stylistic/eslint-plugin": "^5.2.3",
-    "@types/bun": "latest",
-    "@types/react": "^19.1.10",
-    "chalk": "^5.5.0",
-    "eslint": "^9.33.0",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-import-newlines": "^1.4.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "ink": "^6.2.0",
-    "ink-gradient": "^3.0.0",
-    "ink-select-input": "^6.2.0",
-    "react": "^19.1.1",
-    "react-devtools-core": "^6.1.5",
-    "strip-ansi": "^7.1.0",
-    "tinyglobby": "^0.2.14",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.1",
-    "vitest": "^3.2.4",
-    "zod": "^4.0.17",
-    "pluralize": "^8.0.0",
-    "@types/pluralize": "^0.0.33"
+    "save-cookie": "bun run src/ccstatusline.ts --save-cookie",
+    "credit-refresh": "bun run src/ccstatusline.ts --credit-refresh",
+    "set-threshold": "bun run src/ccstatusline.ts --set-threshold",
+    "show-threshold": "bun run src/ccstatusline.ts --show-threshold"
   },
   "keywords": [
-    "claude",
     "claude-code",
-    "cli",
     "status-line",
-    "terminal"
+    "cli",
+    "terminal",
+    "powerline",
+    "aicodemirror",
+    "anthropic",
+    "customizable"
   ],
-  "author": "",
+  "author": "Enhanced Integration",
+  "contributors": [
+    {
+      "name": "Matthew Breedlove",
+      "url": "https://github.com/sirmalloc"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sirmalloc/ccstatusline.git"
+    "url": "git+https://github.com/your-username/ccstatusline-aicodemirror.git"
   },
+  "bugs": {
+    "url": "https://github.com/your-username/ccstatusline-aicodemirror/issues"
+  },
+  "homepage": "https://github.com/your-username/ccstatusline-aicodemirror#readme",
   "engines": {
     "node": ">=14.0.0"
   },
-  "trustedDependencies": [
-    "unrs-resolver"
-  ],
-  "patchedDependencies": {
-    "ink@6.2.0": "patches/ink@6.2.0.patch"
-  }
+  "dependencies": {
+    "chalk": "^5.5.0",
+    "ink": "^6.2.0",
+    "ink-select-input": "^6.2.0",
+    "ink-text-input": "^6.0.0",
+    "pluralize": "^8.0.0",
+    "react": "^19.0.0",
+    "tinyglobby": "^0.2.15",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@stylistic/eslint-plugin": "^5.2.3",
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "cross-env": "^10.0.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-import-newlines": "^1.4.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.17.0"
+  },
+  "main": "dist/ccstatusline.js"
 }

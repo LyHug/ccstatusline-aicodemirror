@@ -12,6 +12,8 @@ test-settings.json
 
 # Build files
 tsconfig.json
+eslint.config.js
+vitest.config.ts
 
 # Test and example files
 *.test.*

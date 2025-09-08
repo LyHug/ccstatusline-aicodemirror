@@ -9,6 +9,10 @@ import type {
 import type { RenderContext } from './types/RenderContext';
 import type { StatusJSON } from './types/StatusJSON';
 import { StatusJSONSchema } from './types/StatusJSON';
+import {
+    loadAicodemirrorConfig,
+    saveAicodemirrorConfig
+} from './utils/aicodemirror';
 import { updateColorMap } from './utils/colors';
 import {
     loadSettings,
@@ -157,8 +161,171 @@ async function renderMultipleLines(data: StatusJSON) {
     }
 }
 
+// 处理退出登录命令
+function handleLogoutCommand(): void {
+    try {
+        const config = loadAicodemirrorConfig();
+
+        const newConfig = {
+            ...config,
+            cookies: '', // 清除Cookie
+            cachedCredits: undefined, // 清除缓存的积分数据
+            lastCreditRefresh: undefined // 清除最后刷新时间
+        };
+
+        saveAicodemirrorConfig(newConfig);
+        console.log(chalk.green('✅ 登录状态已清除，Cookie已删除'));
+
+        // 显示当前状态
+        console.log(chalk.dim('📊 当前状态: 未登录'));
+    } catch (error) {
+        console.error(chalk.red(`❌ 清除登录状态失败: ${error}`));
+        process.exit(1);
+    }
+}
+
+// 处理积分刷新命令
+async function handleCreditRefreshCommand(): Promise<void> {
+    try {
+        const { getCredits } = await import('./utils/aicodemirror');
+        const config = loadAicodemirrorConfig();
+
+        if (!config.cookies) {
+            console.log(chalk.yellow('⚠️  未找到登录状态，请先登录'));
+            return;
+        }
+
+        console.log(chalk.blue('🔄 正在刷新积分数据...'));
+        const creditsData = await getCredits(config.cookies);
+
+        if (creditsData) {
+            console.log(chalk.green(`✅ 积分刷新成功: ${creditsData.credits} (${creditsData.plan})`));
+        } else {
+            console.log(chalk.yellow('⚠️  无法获取积分数据，Cookie可能已失效'));
+        }
+    } catch (error) {
+        console.error(chalk.red(`❌ 积分刷新失败: ${error}`));
+        process.exit(1);
+    }
+}
+
+async function handleSetThresholdCommand(args: string[]): Promise<void> {
+    try {
+        const config = loadAicodemirrorConfig();
+
+        // 解析阈值参数
+        const thresholdIndex = args.findIndex(arg => arg === '--set-threshold');
+        const thresholdValue = args[thresholdIndex + 1];
+
+        if (!thresholdValue) {
+            console.log(chalk.red('❌ 请指定阈值数值'));
+            console.log(chalk.gray('用法: --set-threshold <数值>'));
+            console.log(chalk.gray('示例: --set-threshold 200'));
+            return;
+        }
+
+        const threshold = parseInt(thresholdValue, 10);
+        if (isNaN(threshold) || threshold < 0) {
+            console.log(chalk.red('❌ 阈值必须是非负整数'));
+            return;
+        }
+
+        // 更新配置
+        const updatedConfig = {
+            ...config,
+            creditThreshold: threshold,
+            autoResetEnabled: true
+        };
+        saveAicodemirrorConfig(updatedConfig);
+
+        console.log(chalk.green(`✅ 自动重置积分阈值已设置为: ${threshold}`));
+        console.log(chalk.gray('💡 当积分低于此阈值时，系统将自动触发积分重置'));
+
+        // 如果有Cookie，显示当前积分状态
+        if (config.cookies) {
+            const { getCredits } = await import('./utils/aicodemirror');
+            const creditsData = await getCredits(config.cookies);
+            if (creditsData) {
+                console.log(chalk.cyan(`📊 当前积分: ${creditsData.credits} (${creditsData.plan})`));
+
+                if (creditsData.credits < threshold) {
+                    console.log(chalk.yellow('⚠️  当前积分已低于阈值，下次刷新时将自动重置'));
+                }
+            }
+        }
+    } catch (error) {
+        console.error(chalk.red(`❌ 设置阈值失败: ${error}`));
+        process.exit(1);
+    }
+}
+
+async function handleShowThresholdCommand(): Promise<void> {
+    try {
+        const config = loadAicodemirrorConfig();
+
+        const threshold = config.creditThreshold ?? 200;
+        const autoResetEnabled = config.autoResetEnabled ?? true;
+
+        console.log(chalk.cyan('🔧 自动重置积分配置'));
+        console.log(chalk.gray('═'.repeat(30)));
+        console.log(`${chalk.blue('阈值:')} ${threshold}`);
+        console.log(`${chalk.blue('自动重置:')} ${autoResetEnabled ? chalk.green('启用') : chalk.red('禁用')}`);
+
+        // 如果有Cookie，显示当前积分状态
+        if (config.cookies) {
+            const { getCredits } = await import('./utils/aicodemirror');
+            const creditsData = await getCredits(config.cookies);
+            if (creditsData) {
+                console.log(chalk.gray('─'.repeat(30)));
+                console.log(`${chalk.blue('当前积分:')} ${creditsData.credits} (${creditsData.plan})`);
+
+                if (autoResetEnabled) {
+                    if (creditsData.credits < threshold) {
+                        console.log(chalk.yellow('⚠️  当前积分已低于阈值'));
+                    } else {
+                        console.log(chalk.green('✅ 当前积分高于阈值'));
+                    }
+                }
+            }
+        } else {
+            console.log(chalk.yellow('⚠️  未配置Cookie，无法显示当前积分'));
+        }
+
+        console.log(chalk.gray('─'.repeat(30)));
+        console.log(chalk.gray('💡 使用 --set-threshold <数值> 可以修改阈值'));
+    } catch (error) {
+        console.error(chalk.red(`❌ 查看配置失败: ${error}`));
+        process.exit(1);
+    }
+}
+
 async function main() {
+    // Check for command line arguments first
+    const args = process.argv.slice(2);
+
+    // Handle special commands
+    if (args.includes('--logout') || args.includes('--clear-cookie')) {
+        handleLogoutCommand();
+        return;
+    }
+
+    if (args.includes('--credit-refresh')) {
+        await handleCreditRefreshCommand();
+        return;
+    }
+
+    if (args.includes('--set-threshold')) {
+        await handleSetThresholdCommand(args);
+        return;
+    }
+
+    if (args.includes('--show-threshold')) {
+        await handleShowThresholdCommand();
+        return;
+    }
+
     // Check if we're in a piped/non-TTY environment first
+    // On Windows, process.stdin.isTTY might be undefined, so we need to check for both false and undefined
     if (!process.stdin.isTTY) {
         // We're receiving piped input
         const input = await readStdin();

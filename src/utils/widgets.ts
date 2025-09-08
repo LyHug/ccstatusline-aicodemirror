@@ -26,7 +26,8 @@ const widgetRegistry = new Map<WidgetItemType, Widget>([
     ['terminal-width', new widgets.TerminalWidthWidget()],
     ['version', new widgets.VersionWidget()],
     ['custom-text', new widgets.CustomTextWidget()],
-    ['custom-command', new widgets.CustomCommandWidget()]
+    ['custom-command', new widgets.CustomCommandWidget()],
+    ['aicodemirror-credits', new widgets.AicodemirrorCreditsWidget()]
 ]);
 
 export function getWidget(type: WidgetItemType): Widget | null {

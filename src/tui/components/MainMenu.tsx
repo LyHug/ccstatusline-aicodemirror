@@ -21,12 +21,18 @@ export interface MainMenuProps {
 export const MainMenu: React.FC<MainMenuProps> = ({ onSelect, isClaudeInstalled, hasChanges, initialSelection = 0, powerlineFontStatus, settings, previewIsTruncated }) => {
     const [selectedIndex, setSelectedIndex] = useState(initialSelection);
 
+    // Check if Aicodemirror Credits widget is enabled in any line
+    const hasAicodemirrorCreditsWidget = settings?.lines.some(line => line.some(widget => widget.type === 'aicodemirror-credits')
+    ) ?? false;
+
     // Build menu structure with visual gaps
     const menuItems = [
         { label: '📝 Edit Lines', value: 'lines', selectable: true },
         { label: '🎨 Edit Colors', value: 'colors', selectable: true },
         { label: '⚡ Powerline Setup', value: 'powerline', selectable: true },
         { label: '', value: '_gap1', selectable: false },  // Visual gap
+        // Only show Aicodemirror Configuration if the credits widget is enabled
+        ...(hasAicodemirrorCreditsWidget ? [{ label: '🔗 Aicodemirror Configuration', value: 'aicodemirror', selectable: true }] : []),
         { label: '💻 Terminal Options', value: 'terminalConfig', selectable: true },
         { label: '🌐 Global Overrides', value: 'globalOverrides', selectable: true },
         { label: '', value: '_gap2', selectable: false },  // Visual gap
@@ -64,6 +70,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onSelect, isClaudeInstalled,
             lines: 'Configure up to 3 status lines with various widgets like model info, git status, and token usage',
             colors: 'Customize colors for each widget including foreground, background, and bold styling',
             powerline: 'Install Powerline fonts for enhanced visual separators and symbols in your status line',
+            aicodemirror: 'Configure aicodemirror integration: browser login, credit thresholds, and auto-reset settings',
             globalOverrides: 'Set global padding, separators, and color overrides that apply to all widgets',
             install: isClaudeInstalled
                 ? 'Remove ccstatusline from your Claude Code settings'

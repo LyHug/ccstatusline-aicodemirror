@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const StatusJSONSchema = z.looseObject({
+export const StatusJSONSchema = z.object({
     hook_event_name: z.string().optional(),
     session_id: z.string().optional(),
     transcript_path: z.string().optional(),
@@ -22,6 +22,6 @@ export const StatusJSONSchema = z.looseObject({
         total_lines_added: z.number().optional(),
         total_lines_removed: z.number().optional()
     }).optional()
-});
+}).passthrough();
 
 export type StatusJSON = z.infer<typeof StatusJSONSchema>;

@@ -6,7 +6,6 @@ import {
     useApp,
     useInput
 } from 'ink';
-import Gradient from 'ink-gradient';
 import React, {
     useEffect,
     useState
@@ -34,6 +33,7 @@ import {
 import { getPackageVersion } from '../utils/terminal';
 
 import {
+    AicodemirrorConfigMenu,
     ColorMenu,
     ConfirmDialog,
     GlobalOverridesMenu,
@@ -52,7 +52,7 @@ export const App: React.FC = () => {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [originalSettings, setOriginalSettings] = useState<Settings | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
-    const [screen, setScreen] = useState<'main' | 'lines' | 'items' | 'colorLines' | 'colors' | 'terminalWidth' | 'terminalConfig' | 'globalOverrides' | 'confirm' | 'powerline' | 'install'>('main');
+    const [screen, setScreen] = useState<'main' | 'lines' | 'items' | 'colorLines' | 'colors' | 'terminalWidth' | 'terminalConfig' | 'globalOverrides' | 'confirm' | 'powerline' | 'install' | 'aicodemirror'>('main');
     const [selectedLine, setSelectedLine] = useState(0);
     const [menuSelections, setMenuSelections] = useState<Record<string, number>>({});
     const [confirmDialog, setConfirmDialog] = useState<{ message: string; action: () => Promise<void> } | null>(null);
@@ -137,7 +137,7 @@ export const App: React.FC = () => {
         if (isClaudeInstalled) {
             // Uninstall
             setConfirmDialog({
-                message: 'This will remove ccstatusline from ~/.claude/settings.json. Continue?',
+                message: 'This will remove ccstatusline-aicodemirror from ~/.claude/settings.json. Continue?',
                 action: async () => {
                     await uninstallStatusLine();
                     setIsClaudeInstalled(false);
@@ -163,6 +163,9 @@ export const App: React.FC = () => {
             break;
         case 'terminalConfig':
             setScreen('terminalConfig');
+            break;
+        case 'aicodemirror':
+            setScreen('aicodemirror');
             break;
         case 'globalOverrides':
             setScreen('globalOverrides');
@@ -203,10 +206,8 @@ export const App: React.FC = () => {
     return (
         <Box flexDirection='column'>
             <Box marginBottom={1}>
-                <Text bold>
-                    <Gradient name='retro'>
-                        CCStatusline Configuration
-                    </Gradient>
+                <Text bold color='cyan'>
+                    CCStatusline-Aicodemirror Configuration
                 </Text>
                 <Text bold>
                     {` | ${getPackageVersion() && `v${getPackageVersion()}`}`}
@@ -235,9 +236,10 @@ export const App: React.FC = () => {
                                     lines: 0,
                                     colors: 1,
                                     powerline: 2,
-                                    terminalConfig: 3,
-                                    globalOverrides: 4,
-                                    install: 5
+                                    aicodemirror: 3,
+                                    terminalConfig: 4,
+                                    globalOverrides: 5,
+                                    install: 6
                                 };
                                 setMenuSelections({ ...menuSelections, main: menuMap[value] ?? 0 });
                             }
@@ -349,6 +351,13 @@ export const App: React.FC = () => {
                         }}
                     />
                 )}
+                {screen === 'aicodemirror' && (
+                    <AicodemirrorConfigMenu
+                        onBack={() => {
+                            setScreen('main');
+                        }}
+                    />
+                )}
                 {screen === 'globalOverrides' && (
                     <GlobalOverridesMenu
                         settings={settings}
@@ -367,7 +376,10 @@ export const App: React.FC = () => {
                         message={confirmDialog.message}
                         onConfirm={() => void confirmDialog.action()}
                         onCancel={() => {
-                            setScreen('main');
+                            // If confirmDialog was triggered from install flow, return to install screen
+                            // Otherwise (e.g., from uninstall), return to main screen
+                            const returnToScreen = confirmDialog.message.includes('ccstatusline-aicodemirror from') ? 'main' : 'install';
+                            setScreen(returnToScreen);
                             setConfirmDialog(null);
                         }}
                     />
@@ -378,15 +390,15 @@ export const App: React.FC = () => {
                         existingStatusLine={existingStatusLine}
                         onSelectNpx={() => {
                             void getExistingStatusLine().then((existing) => {
-                                const isAlreadyInstalled = ['npx -y ccstatusline@latest', 'bunx -y ccstatusline@latest'].includes(existing ?? '');
+                                const isAlreadyInstalled = ['npx -y ccstatusline-aicodemirror@latest', 'bunx -y ccstatusline-aicodemirror@latest', 'npx -y ccstatusline-aicodemirror'].includes(existing ?? '');
                                 let message: string;
 
                                 if (existing && !isAlreadyInstalled) {
-                                    message = `This will modify ~/.claude/settings.json\n\nA status line is already configured: "${existing}"\nReplace it with npx -y ccstatusline@latest?`;
+                                    message = `This will modify ~/.claude/settings.json\n\nA status line is already configured: "${existing}"\nReplace it with npx -y ccstatusline-aicodemirror@latest?`;
                                 } else if (isAlreadyInstalled) {
-                                    message = 'ccstatusline is already installed in ~/.claude/settings.json\nUpdate it with npx -y ccstatusline@latest?';
+                                    message = 'ccstatusline-aicodemirror is already installed in ~/.claude/settings.json\nUpdate it with npx -y ccstatusline-aicodemirror@latest?';
                                 } else {
-                                    message = 'This will modify ~/.claude/settings.json to add ccstatusline with npx.\nContinue?';
+                                    message = 'This will modify ~/.claude/settings.json to add ccstatusline-aicodemirror with npx.\nContinue?';
                                 }
 
                                 setConfirmDialog({
@@ -394,7 +406,7 @@ export const App: React.FC = () => {
                                     action: async () => {
                                         await installStatusLine(false);
                                         setIsClaudeInstalled(true);
-                                        setExistingStatusLine('npx -y ccstatusline@latest');
+                                        setExistingStatusLine('npx -y ccstatusline-aicodemirror@latest');
                                         setScreen('main');
                                         setConfirmDialog(null);
                                     }
@@ -404,15 +416,15 @@ export const App: React.FC = () => {
                         }}
                         onSelectBunx={() => {
                             void getExistingStatusLine().then((existing) => {
-                                const isAlreadyInstalled = ['npx -y ccstatusline@latest', 'bunx -y ccstatusline@latest'].includes(existing ?? '');
+                                const isAlreadyInstalled = ['npx -y ccstatusline-aicodemirror@latest', 'bunx -y ccstatusline-aicodemirror@latest', 'npx -y ccstatusline-aicodemirror'].includes(existing ?? '');
                                 let message: string;
 
                                 if (existing && !isAlreadyInstalled) {
-                                    message = `This will modify ~/.claude/settings.json\n\nA status line is already configured: "${existing}"\nReplace it with bunx -y ccstatusline@latest?`;
+                                    message = `This will modify ~/.claude/settings.json\n\nA status line is already configured: "${existing}"\nReplace it with bunx -y ccstatusline-aicodemirror@latest?`;
                                 } else if (isAlreadyInstalled) {
-                                    message = 'ccstatusline is already installed in ~/.claude/settings.json\nUpdate it with bunx -y ccstatusline@latest?';
+                                    message = 'ccstatusline-aicodemirror is already installed in ~/.claude/settings.json\nUpdate it with bunx -y ccstatusline-aicodemirror@latest?';
                                 } else {
-                                    message = 'This will modify ~/.claude/settings.json to add ccstatusline with bunx.\nContinue?';
+                                    message = 'This will modify ~/.claude/settings.json to add ccstatusline-aicodemirror with bunx.\nContinue?';
                                 }
 
                                 setConfirmDialog({
@@ -420,7 +432,39 @@ export const App: React.FC = () => {
                                     action: async () => {
                                         await installStatusLine(true);
                                         setIsClaudeInstalled(true);
-                                        setExistingStatusLine('bunx -y ccstatusline@latest');
+                                        setExistingStatusLine('bunx -y ccstatusline-aicodemirror@latest');
+                                        setScreen('main');
+                                        setConfirmDialog(null);
+                                    }
+                                });
+                                setScreen('confirm');
+                            });
+                        }}
+                        onSelectDev={() => {
+                            // Only allow dev installation in non-production environment
+                            const isProduction = process.env.NODE_ENV === 'production';
+                            if (isProduction) {
+                                return;
+                            }
+
+                            void getExistingStatusLine().then((existing) => {
+                                const isAlreadyDev = existing === 'npx -y ccstatusline-aicodemirror';
+                                let message: string;
+
+                                if (existing && !isAlreadyDev) {
+                                    message = `This will modify ~/.claude/settings.json\n\nA status line is already configured: "${existing}"\nReplace it with npx -y ccstatusline-aicodemirror for development testing?`;
+                                } else if (isAlreadyDev) {
+                                    message = 'ccstatusline-aicodemirror development version is already installed in ~/.claude/settings.json\nUpdate it?';
+                                } else {
+                                    message = 'This will modify ~/.claude/settings.json to add ccstatusline-aicodemirror development version.\nContinue?';
+                                }
+
+                                setConfirmDialog({
+                                    message,
+                                    action: async () => {
+                                        await installStatusLine(false, true);
+                                        setIsClaudeInstalled(true);
+                                        setExistingStatusLine('npx -y ccstatusline-aicodemirror');
                                         setScreen('main');
                                         setConfirmDialog(null);
                                     }

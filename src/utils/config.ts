@@ -19,7 +19,7 @@ const readFile = fs.promises.readFile;
 const writeFile = fs.promises.writeFile;
 const mkdir = fs.promises.mkdir;
 
-const CONFIG_DIR = path.join(os.homedir(), '.config', 'ccstatusline');
+const CONFIG_DIR = path.join(os.homedir(), '.config', 'ccstatusline-aicodemirror');
 const SETTINGS_PATH = path.join(CONFIG_DIR, 'settings.json');
 const SETTINGS_BACKUP_PATH = path.join(CONFIG_DIR, 'settings.bak');
 

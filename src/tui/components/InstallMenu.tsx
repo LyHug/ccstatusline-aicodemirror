@@ -10,6 +10,7 @@ export interface InstallMenuProps {
     existingStatusLine: string | null;
     onSelectNpx: () => void;
     onSelectBunx: () => void;
+    onSelectDev: () => void;
     onCancel: () => void;
 }
 
@@ -18,34 +19,31 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
     existingStatusLine,
     onSelectNpx,
     onSelectBunx,
+    onSelectDev,
     onCancel
 }) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const maxIndex = 2; // npx, bunx (if available), and back
+    const isProduction = process.env.NODE_ENV === 'production';
+    const showDevOption = !isProduction;
+    const maxIndex = bunxAvailable
+        ? (showDevOption ? 3 : 2)  // npx, bunx, dev (if not production), back
+        : (showDevOption ? 2 : 1); // npx, dev (if not production), back
 
     useInput((input, key) => {
         if (key.escape) {
             onCancel();
         } else if (key.upArrow) {
-            if (selectedIndex === 2) {
-                setSelectedIndex(bunxAvailable ? 1 : 0); // Skip bunx if not available
-            } else {
-                setSelectedIndex(Math.max(0, selectedIndex - 1));
-            }
+            setSelectedIndex(selectedIndex === 0 ? maxIndex : selectedIndex - 1);
         } else if (key.downArrow) {
-            if (selectedIndex === 0) {
-                setSelectedIndex(bunxAvailable ? 1 : 2); // Skip bunx if not available
-            } else if (selectedIndex === 1 && bunxAvailable) {
-                setSelectedIndex(2);
-            } else {
-                setSelectedIndex(Math.min(maxIndex, selectedIndex + 1));
-            }
+            setSelectedIndex(selectedIndex === maxIndex ? 0 : selectedIndex + 1);
         } else if (key.return) {
             if (selectedIndex === 0) {
                 onSelectNpx();
             } else if (selectedIndex === 1 && bunxAvailable) {
                 onSelectBunx();
-            } else if (selectedIndex === 2) {
+            } else if (showDevOption && selectedIndex === (bunxAvailable ? 2 : 1)) {
+                onSelectDev();
+            } else if (selectedIndex === maxIndex) {
                 onCancel();
             }
         }
@@ -53,7 +51,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
 
     return (
         <Box flexDirection='column'>
-            <Text bold>Install ccstatusline to Claude Code</Text>
+            <Text bold>Install ccstatusline-aicodemirror to Claude Code</Text>
 
             {existingStatusLine && (
                 <Box marginBottom={1}>
@@ -66,7 +64,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
             )}
 
             <Box>
-                <Text dimColor>Select package manager to use:</Text>
+                <Text dimColor>Select installation method:</Text>
             </Box>
 
             <Box marginTop={1} flexDirection='column'>
@@ -77,17 +75,27 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
                     </Text>
                 </Box>
 
-                <Box>
-                    <Text color={selectedIndex === 1 && bunxAvailable ? 'blue' : undefined} dimColor={!bunxAvailable}>
-                        {selectedIndex === 1 && bunxAvailable ? '▶  ' : '   '}
-                        bunx - Bun Package Execute
-                        {!bunxAvailable && ' (not installed)'}
-                    </Text>
-                </Box>
+                {bunxAvailable && (
+                    <Box>
+                        <Text color={selectedIndex === 1 ? 'blue' : undefined}>
+                            {selectedIndex === 1 ? '▶  ' : '   '}
+                            bunx - Bun Package Execute
+                        </Text>
+                    </Box>
+                )}
+
+                {showDevOption && (
+                    <Box>
+                        <Text color={selectedIndex === (bunxAvailable ? 2 : 1) ? 'blue' : undefined}>
+                            {selectedIndex === (bunxAvailable ? 2 : 1) ? '▶  ' : '   '}
+                            dev - Development Testing
+                        </Text>
+                    </Box>
+                )}
 
                 <Box marginTop={1}>
-                    <Text color={selectedIndex === 2 ? 'blue' : undefined}>
-                        {selectedIndex === 2 ? '▶  ' : '   '}
+                    <Text color={selectedIndex === maxIndex ? 'blue' : undefined}>
+                        {selectedIndex === maxIndex ? '▶  ' : '   '}
                         ← Back
                     </Text>
                 </Box>
