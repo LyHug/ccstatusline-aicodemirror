@@ -26,6 +26,7 @@ import {
     openTextEditor,
     validateAndSaveCookie
 } from '../../utils/browser-cookie';
+import { getCompatibleChar } from '../../utils/unicode-compat';
 
 export interface AicodemirrorConfigMenuProps { onBack: () => void }
 
@@ -584,7 +585,7 @@ ${creditsData.credits < threshold
                                 key={item.value}
                                 color={isSelected ? 'green' : undefined}
                             >
-                                {isSelected ? '▶  ' : '   '}
+                                {isSelected ? `${getCompatibleChar('▶', '>')}  ` : '   '}
                                 {item.label}
                             </Text>
                         );

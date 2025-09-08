@@ -8,6 +8,7 @@ import type {
     WidgetEditorDisplay,
     WidgetItem
 } from '../types/Widget';
+import { getCompatibleChar } from '../utils/unicode-compat';
 
 export class GitBranchWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
@@ -45,14 +46,18 @@ export class GitBranchWidget implements Widget {
         const hideNoGit = item.metadata?.hideNoGit === 'true';
 
         if (context.isPreview) {
-            return item.rawValue ? 'main' : '⎇ main';
+            const branchIcon = getCompatibleChar('⎇', '*');
+            return item.rawValue ? 'main' : `${branchIcon} main`;
         }
 
         const branch = this.getGitBranch();
-        if (branch)
-            return item.rawValue ? branch : `⎇ ${branch}`;
+        const branchIcon = getCompatibleChar('⎇', '*');
 
-        return hideNoGit ? null : '⎇ no git';
+        if (branch) {
+            return item.rawValue ? branch : `${branchIcon} ${branch}`;
+        }
+
+        return hideNoGit ? null : `${branchIcon} no git`;
     }
 
     private getGitBranch(): string | null {

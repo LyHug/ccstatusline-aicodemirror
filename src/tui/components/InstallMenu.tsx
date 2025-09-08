@@ -5,6 +5,8 @@ import {
 } from 'ink';
 import React, { useState } from 'react';
 
+import { getCompatibleChar } from '../../utils/unicode-compat';
+
 export interface InstallMenuProps {
     bunxAvailable: boolean;
     existingStatusLine: string | null;
@@ -70,7 +72,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
             <Box marginTop={1} flexDirection='column'>
                 <Box>
                     <Text color={selectedIndex === 0 ? 'blue' : undefined}>
-                        {selectedIndex === 0 ? '▶  ' : '   '}
+                        {selectedIndex === 0 ? `${getCompatibleChar('▶', '>')}  ` : '   '}
                         npx - Node Package Execute
                     </Text>
                 </Box>
@@ -78,7 +80,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
                 {bunxAvailable && (
                     <Box>
                         <Text color={selectedIndex === 1 ? 'blue' : undefined}>
-                            {selectedIndex === 1 ? '▶  ' : '   '}
+                            {selectedIndex === 1 ? `${getCompatibleChar('▶', '>')}  ` : '   '}
                             bunx - Bun Package Execute
                         </Text>
                     </Box>
@@ -87,7 +89,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
                 {showDevOption && (
                     <Box>
                         <Text color={selectedIndex === (bunxAvailable ? 2 : 1) ? 'blue' : undefined}>
-                            {selectedIndex === (bunxAvailable ? 2 : 1) ? '▶  ' : '   '}
+                            {selectedIndex === (bunxAvailable ? 2 : 1) ? `${getCompatibleChar('▶', '>')}  ` : '   '}
                             dev - Development Testing
                         </Text>
                     </Box>
@@ -95,7 +97,7 @@ export const InstallMenu: React.FC<InstallMenuProps> = ({
 
                 <Box marginTop={1}>
                     <Text color={selectedIndex === maxIndex ? 'blue' : undefined}>
-                        {selectedIndex === maxIndex ? '▶  ' : '   '}
+                        {selectedIndex === maxIndex ? `${getCompatibleChar('▶', '>')}  ` : '   '}
                         ← Back
                     </Text>
                 </Box>
