@@ -1,6 +1,6 @@
 {
   "name": "ccstatusline-aicodemirror",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Unified status line formatter for Claude Code with complete aicodemirror integration - Smart credit tracking, auto-reset, browser login, and customizable display widgets based on ccstatusline",
   "module": "src/ccstatusline.ts",
   "type": "module",
