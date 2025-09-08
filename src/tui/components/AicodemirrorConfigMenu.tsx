@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import {
     existsSync,
     readFileSync,
@@ -24,6 +23,7 @@ import {
 import {
     cleanup,
     launchBrowserLogin,
+    openTextEditor,
     validateAndSaveCookie
 } from '../../utils/browser-cookie';
 
@@ -243,12 +243,7 @@ Cookie内容（请粘贴到下一行）：
             setTempFilePath(tempFile);
 
             // 打开系统默认编辑器
-            const isWindows = process.platform === 'win32';
-            if (isWindows) {
-                spawn('notepad', [tempFile], { detached: true, stdio: 'ignore' });
-            } else {
-                spawn('nano', [tempFile], { detached: true, stdio: 'ignore' });
-            }
+            await openTextEditor(tempFile);
 
             // 切换到等待状态
             setShowFileWait(true);

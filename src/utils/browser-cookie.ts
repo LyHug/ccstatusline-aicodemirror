@@ -232,6 +232,13 @@ function handleLinuxBrowser(url: string, isWSL: boolean, resolve: (success: bool
     if (isWSL) {
         // WSL 环境：优先尝试调用 Windows 的浏览器
         commands.push(
+            // 使用完整路径的 cmd.exe
+            () => spawn('/mnt/c/Windows/System32/cmd.exe', ['/c', 'start', url], { detached: true, stdio: 'ignore' }),
+            // 使用 wslview (如果可用) - WSL 的标准浏览器打开工具
+            () => spawn('wslview', [url], { detached: true, stdio: 'ignore' }),
+            // 使用 explorer.exe 打开 URL
+            () => spawn('/mnt/c/Windows/explorer.exe', [url], { detached: true, stdio: 'ignore' }),
+            // 回退到相对路径的命令
             () => spawn('cmd.exe', ['/c', 'start', url], { detached: true, stdio: 'ignore' }),
             () => spawn('powershell.exe', ['-Command', `Start-Process "${url}"`], { detached: true, stdio: 'ignore' })
         );
@@ -357,6 +364,135 @@ export async function validateAndSaveCookie(cookie: string): Promise<BrowserLogi
             success: false,
             message: `❌ 验证Cookie时出错: ${String(error)}`
         };
+    }
+}
+
+/**
+ * 跨平台文本编辑器打开
+ */
+export async function openTextEditor(filePath: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const isWindows = process.platform === 'win32';
+        const isMacOS = process.platform === 'darwin';
+        const isWSL = detectWSL();
+
+        console.log(`📝 正在打开文本编辑器: ${filePath}`);
+
+        if (isWindows) {
+            handleWindowsEditor(filePath, resolve);
+        } else if (isMacOS) {
+            handleMacOSEditor(filePath, resolve);
+        } else {
+            // Linux/Unix systems
+            handleLinuxEditor(filePath, isWSL, resolve);
+        }
+    });
+}
+
+/**
+ * Windows 编辑器处理
+ */
+function handleWindowsEditor(filePath: string, resolve: (success: boolean) => void): void {
+    const editors = [
+        () => spawn('notepad', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('code', [filePath], { detached: true, stdio: 'ignore' }), // VS Code
+        () => spawn('notepad++', [filePath], { detached: true, stdio: 'ignore' })
+    ];
+
+    tryEditorCommands(editors, 0, resolve);
+}
+
+/**
+ * macOS 编辑器处理
+ */
+function handleMacOSEditor(filePath: string, resolve: (success: boolean) => void): void {
+    const editors = [
+        () => spawn('open', ['-t', filePath], { detached: true, stdio: 'ignore' }), // TextEdit
+        () => spawn('code', [filePath], { detached: true, stdio: 'ignore' }), // VS Code
+        () => spawn('nano', [filePath], { detached: true, stdio: 'ignore' })
+    ];
+
+    tryEditorCommands(editors, 0, resolve);
+}
+
+/**
+ * Linux 编辑器处理
+ */
+function handleLinuxEditor(filePath: string, isWSL: boolean, resolve: (success: boolean) => void): void {
+    const editors = [];
+
+    if (isWSL) {
+        // WSL 环境：优先尝试 Windows 编辑器
+        editors.push(
+            () => spawn('/mnt/c/Windows/System32/notepad.exe', [filePath], { detached: true, stdio: 'ignore' }),
+            () => spawn('code', [filePath], { detached: true, stdio: 'ignore' })
+        );
+    }
+
+    // Linux 桌面环境编辑器
+    editors.push(
+        () => spawn('gedit', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('kate', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('mousepad', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('leafpad', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('pluma', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('code', [filePath], { detached: true, stdio: 'ignore' }),
+        () => spawn('subl', [filePath], { detached: true, stdio: 'ignore' }),
+        // 终端编辑器作为最后的回退
+        () => spawn('nano', [filePath], { stdio: 'inherit' }),
+        () => spawn('vim', [filePath], { stdio: 'inherit' }),
+        () => spawn('vi', [filePath], { stdio: 'inherit' })
+    );
+
+    tryEditorCommands(editors, 0, resolve);
+}
+
+/**
+ * 依次尝试编辑器命令列表
+ */
+function tryEditorCommands(commands: (() => ChildProcess)[], index: number, resolve: (success: boolean) => void): void {
+    if (index >= commands.length) {
+        console.log('✗ 无法打开任何文本编辑器');
+        console.log('💡 请手动编辑文件，然后按回车继续');
+        resolve(false);
+        return;
+    }
+
+    try {
+        const command = commands[index];
+        if (!command) {
+            tryEditorCommands(commands, index + 1, resolve);
+            return;
+        }
+
+        const child = command();
+        let resolved = false;
+
+        child.on('error', () => {
+            if (!resolved) {
+                resolved = true;
+                // 尝试下一个编辑器
+                tryEditorCommands(commands, index + 1, resolve);
+            }
+        });
+
+        child.on('spawn', () => {
+            if (!resolved) {
+                resolved = true;
+                console.log('✓ 文本编辑器已打开');
+                resolve(true);
+            }
+        });
+
+        // 设置超时，避免hanging
+        setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                tryEditorCommands(commands, index + 1, resolve);
+            }
+        }, 3000);
+    } catch {
+        tryEditorCommands(commands, index + 1, resolve);
     }
 }
 
