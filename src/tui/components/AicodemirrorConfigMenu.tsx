@@ -502,7 +502,7 @@ ${creditsData.credits < threshold
                 <Text color='cyan'>
                     ⚙️ 自动重置阈值:
                     {' '}
-                    {config.creditThreshold ?? 1000}
+                    {config.creditThreshold ?? 200}
                     {' '}
                     (
                     {(config.autoResetEnabled ?? true) ? '启用' : '禁用'}
@@ -544,7 +544,7 @@ ${creditsData.credits < threshold
                                 value={thresholdInput}
                                 onChange={setThresholdInput}
                                 onSubmit={handleThresholdSubmit}
-                                placeholder='1000'
+                                placeholder='200'
                             />
                         </Box>
                         <Text> </Text>
