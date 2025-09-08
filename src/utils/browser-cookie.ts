@@ -1,6 +1,8 @@
+import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import {
     existsSync,
+    readFileSync,
     unlinkSync,
     writeFileSync
 } from 'fs';
@@ -77,7 +79,7 @@ export async function launchBrowserLogin(): Promise<BrowserLoginResult> {
         writeFileSync(TEMP_SCRIPT_PATH, BROWSER_SCRIPT);
 
         // 打开浏览器
-        openBrowser('https://www.aicodemirror.com/dashboard');
+        await openBrowser('https://www.aicodemirror.com/dashboard');
 
         // 返回手动模式说明
         return {
@@ -116,40 +118,186 @@ export async function launchBrowserLogin(): Promise<BrowserLoginResult> {
     }
 }
 
-function openBrowser(url: string): void {
-    const isWindows = process.platform === 'win32';
+function openBrowser(url: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const isWindows = process.platform === 'win32';
+        const isMacOS = process.platform === 'darwin';
+        const isWSL = detectWSL();
 
-    if (isWindows) {
-        // Windows: 优先尝试Chrome路径
-        const chromePaths = [
-            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-        ];
+        console.log(`🌐 正在尝试打开浏览器: ${url}`);
 
-        // 尝试直接启动Chrome
-        for (const chromePath of chromePaths) {
-            if (existsSync(chromePath)) {
-                try {
-                    spawn(chromePath, [url, '--remote-debugging-port=9222'], {
-                        detached: true,
-                        stdio: 'ignore'
-                    });
-                    console.log(`✓ Chrome started: ${chromePath}`);
-                    return;
-                } catch (error) {
-                    console.log(`✗ Failed to start Chrome: ${String(error)}`);
-                    continue;
-                }
+        if (isWindows) {
+            handleWindowsBrowser(url, resolve);
+        } else if (isMacOS) {
+            handleMacOSBrowser(url, resolve);
+        } else {
+            // Linux/Unix systems
+            handleLinuxBrowser(url, isWSL, resolve);
+        }
+    });
+}
+
+/**
+ * 检测是否运行在 WSL 环境中
+ */
+function detectWSL(): boolean {
+    try {
+        // 方法1: 检查 /proc/version 文件
+        if (existsSync('/proc/version')) {
+            const version = readFileSync('/proc/version', 'utf8');
+            if (version.toLowerCase().includes('microsoft') || version.toLowerCase().includes('wsl')) {
+                return true;
             }
         }
 
-        console.log('Chrome not found, using default browser');
-        // 如果Chrome不可用，使用默认浏览器
-        spawn('cmd', ['/c', 'start', url], { detached: true, stdio: 'ignore' });
-    } else {
-        // macOS/Linux
-        const command = process.platform === 'darwin' ? 'open' : 'xdg-open';
-        spawn(command, [url], { detached: true, stdio: 'ignore' });
+        // 方法2: 检查环境变量
+        return process.env.WSL_DISTRO_NAME !== undefined
+            || process.env.WSLENV !== undefined;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Windows 浏览器处理
+ */
+function handleWindowsBrowser(url: string, resolve: (success: boolean) => void): void {
+    const chromePaths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+    ];
+
+    // 尝试直接启动Chrome
+    for (const chromePath of chromePaths) {
+        if (existsSync(chromePath)) {
+            try {
+                spawn(chromePath, [url, '--remote-debugging-port=9222'], {
+                    detached: true,
+                    stdio: 'ignore'
+                }).on('error', () => {
+                    // 继续尝试下一个路径
+                }).on('spawn', () => {
+                    console.log(`✓ Chrome started: ${chromePath}`);
+                    resolve(true);
+                    return;
+                });
+                return; // 等待spawn事件
+            } catch {
+                continue;
+            }
+        }
+    }
+
+    // 回退到默认浏览器
+    try {
+        spawn('cmd', ['/c', 'start', url], { detached: true, stdio: 'ignore' })
+            .on('error', () => {
+                console.log('✗ 无法打开浏览器');
+                resolve(false);
+            })
+            .on('spawn', () => {
+                console.log('✓ 使用默认浏览器打开');
+                resolve(true);
+            });
+    } catch {
+        resolve(false);
+    }
+}
+
+/**
+ * macOS 浏览器处理
+ */
+function handleMacOSBrowser(url: string, resolve: (success: boolean) => void): void {
+    try {
+        spawn('open', [url], { detached: true, stdio: 'ignore' })
+            .on('error', () => {
+                console.log('✗ 无法打开浏览器');
+                resolve(false);
+            })
+            .on('spawn', () => {
+                console.log('✓ 浏览器已打开');
+                resolve(true);
+            });
+    } catch {
+        resolve(false);
+    }
+}
+
+/**
+ * Linux/Unix 浏览器处理
+ */
+function handleLinuxBrowser(url: string, isWSL: boolean, resolve: (success: boolean) => void): void {
+    const commands = [];
+
+    if (isWSL) {
+        // WSL 环境：优先尝试调用 Windows 的浏览器
+        commands.push(
+            () => spawn('cmd.exe', ['/c', 'start', url], { detached: true, stdio: 'ignore' }),
+            () => spawn('powershell.exe', ['-Command', `Start-Process "${url}"`], { detached: true, stdio: 'ignore' })
+        );
+    }
+
+    // 标准 Linux 桌面环境命令
+    commands.push(
+        () => spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('sensible-browser', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('x-www-browser', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('firefox', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('chromium', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('chromium-browser', [url], { detached: true, stdio: 'ignore' }),
+        () => spawn('google-chrome', [url], { detached: true, stdio: 'ignore' })
+    );
+
+    tryCommands(commands, 0, resolve);
+}
+
+/**
+ * 依次尝试命令列表
+ */
+function tryCommands(commands: (() => ChildProcess)[], index: number, resolve: (success: boolean) => void): void {
+    if (index >= commands.length) {
+        console.log('✗ 所有浏览器启动方法都失败了');
+        console.log('💡 请手动访问: https://www.aicodemirror.com/dashboard');
+        console.log('   然后复制Cookie字符串并选择 "📝 从文件获取Cookie" 选项');
+        resolve(false);
+        return;
+    }
+
+    try {
+        const command = commands[index];
+        if (!command) {
+            tryCommands(commands, index + 1, resolve);
+            return;
+        }
+
+        const child = command();
+        let resolved = false;
+
+        child.on('error', () => {
+            if (!resolved) {
+                resolved = true;
+                // 尝试下一个命令
+                tryCommands(commands, index + 1, resolve);
+            }
+        });
+
+        child.on('spawn', () => {
+            if (!resolved) {
+                resolved = true;
+                console.log('✓ 浏览器已打开');
+                resolve(true);
+            }
+        });
+
+        // 设置超时，避免hanging
+        setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                tryCommands(commands, index + 1, resolve);
+            }
+        }, 2000);
+    } catch {
+        tryCommands(commands, index + 1, resolve);
     }
 }
 
